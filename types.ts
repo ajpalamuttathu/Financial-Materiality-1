@@ -8,52 +8,40 @@ export interface Industry {
 export interface SasbTopic {
   id: string;
   name: string;
-  industryCode: string; // The primary industry it belongs to
+  industryCode: string;
   description: string;
-  associatedMetrics: string[]; // Mocking the "Framework Builder" artifact
+  associatedMetrics: string[];
 }
 
-// Step 2: Global Configuration Types
 export enum MagnitudeType {
-  ABSOLUTE = 'ABSOLUTE', // $
-  RELATIVE = 'RELATIVE', // %
-}
-
-export interface MagnitudeRange {
-  label: string; // Low, Medium, High
-  min: number;
-  max: number | null; // null means infinite/plus
+  ABSOLUTE = 'ABSOLUTE',
+  RELATIVE = 'RELATIVE',
 }
 
 export interface Configuration {
   magnitude: {
     type: MagnitudeType;
-    denominator?: string; // e.g., "Revenue", "EBITDA"
-    currency?: string;
-    ranges: {
-      low: MagnitudeRange;
-      medium: MagnitudeRange;
-      high: MagnitudeRange;
-    }
+    denominator?: string;
+    lowThreshold: number;
+    mediumThreshold: number;
+    maxCap: number;
   };
   likelihood: {
-    lowMax: number; // 0 to lowMax %
-    mediumMax: number; // lowMax to mediumMax %
-    highMin: number; // > highMin %
+    lowThreshold: number;
+    mediumThreshold: number;
   };
   horizons: {
-    shortTermYears: number;
-    mediumTermYears: number;
-    longTermYears: number;
+    shortTerm: number;
+    mediumTerm: number;
+    longTermMax: number;
   };
 }
 
-// Step 3: Assessment Data Types
-
 export enum OmissionReason {
-  IMMATERIAL = 'Immaterial',
-  NOT_APPLICABLE = 'Not Applicable',
-  UNDUE_COST = 'Undue Cost or Effort',
+  IMMATERIAL = 'Immaterial (Financial)',
+  NOT_APPLICABLE = 'Not Applicable to Business Model',
+  PROHIBITED = 'Disclosure Prohibited by Law',
+  SENSITIVE = 'Commercially Sensitive Information',
 }
 
 export enum ValueChainStage {
@@ -79,7 +67,6 @@ export enum ScoreLevel {
   HIGH = 'High',
 }
 
-// Defined named types for nested objects to ensure they are properly identified as object types for spread operations.
 export type AssessmentScores = {
   magnitude: ScoreLevel;
   likelihood: ScoreLevel;
@@ -89,24 +76,21 @@ export type AssessmentScores = {
 export type IfrsBridge = {
   effectType?: EffectType;
   statementLink?: FinancialStatement;
-  fsli?: string; // Financial Statement Line Item
+  fsli?: string;
 };
 
 export type AssessmentData = {
   topicId: string;
-  isMaterial: boolean | null; // null = not started
-  // If NO
+  isMaterial: boolean | null;
   omissionReason?: OmissionReason;
   justification?: string;
-  // If YES
   riskDescription?: string;
   valueChain: ValueChainStage[];
   scores: AssessmentScores;
   ifrsBridge: IfrsBridge;
-  lastUpdated: number; // timestamp
+  lastUpdated: number;
 };
 
-// New Types for Listing Page
 export enum AssessmentStatus {
   DRAFT = 'Draft',
   FINALIZED = 'Finalized',
@@ -114,31 +98,17 @@ export enum AssessmentStatus {
 }
 
 export interface SavedAssessment {
-  id: string; // Unique ID
-  assessmentName: string; // New field
-  timeline: {
-    start: string; // YYYY-MM
-    end: string;   // YYYY-MM
-  };
-  reportingYear: string; // Kept for backward compatibility or simple year
+  id: string;
+  assessmentName: string;
+  reportingYear: string;
   version: number;
   status: AssessmentStatus;
   lastModified: number;
   reAssessmentReason?: string;
-  
-  // Snapshot of the state
   data: {
     primaryIndustry: Industry | null;
     secondaryIndustries: Industry[];
     config: Configuration;
     assessments: Record<string, AssessmentData>;
   };
-}
-
-export interface AppState {
-  step: number; // 1, 2, 3, 4 (Dashboard)
-  primaryIndustry: Industry | null;
-  secondaryIndustries: Industry[];
-  config: Configuration;
-  assessments: Record<string, AssessmentData>; // Map topicId -> Data
 }

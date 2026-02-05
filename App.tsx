@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { Industry, Configuration, AssessmentData, SasbTopic, SavedAssessment, AssessmentStatus, ScoreLevel } from './types';
 import { DEFAULT_CONFIG, MOCK_TOPICS } from './constants';
 import { IndustrySelector } from './components/IndustrySelector';
@@ -7,17 +8,16 @@ import { AssessmentEngine } from './components/AssessmentEngine';
 import { Dashboard } from './components/Dashboard';
 import { AssessmentList } from './components/AssessmentList';
 import { GeneralSettings } from './components/GeneralSettings';
-import { Settings, ClipboardList, BarChart3, ChevronRight, Lock, Users, Check, Loader2, ArrowLeft } from 'lucide-react';
+import { Settings, ClipboardList, BarChart3, ChevronRight, Lock, Save, ArrowLeft } from 'lucide-react';
 
 const MOCK_SAVED_ASSESSMENTS: SavedAssessment[] = [
   {
     id: 'mock-1',
-    assessmentName: 'FY2023 Sustainability Assessment',
-    timeline: { start: '2023-01', end: '2023-12' },
-    reportingYear: '2023',
+    assessmentName: 'Diginex Global Materiality Assessment',
+    reportingYear: '2024',
     version: 1,
     status: AssessmentStatus.FINALIZED,
-    lastModified: Date.now() - 86400000 * 5,
+    lastModified: Date.now() - 86400000,
     data: {
       primaryIndustry: { code: 'TC-SI', name: 'Software & IT Services', sector: 'Technology & Communications' },
       secondaryIndustries: [],
@@ -33,15 +33,19 @@ const App: React.FC = () => {
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const [assessmentName, setAssessmentName] = useState('');
-  const [timelineStart, setTimelineStart] = useState('');
-  const [timelineEnd, setTimelineEnd] = useState('');
+  const [reportingYear, setReportingYear] = useState('2025');
   const [primaryIndustry, setPrimaryIndustry] = useState<Industry | null>(null);
   const [secondaryIndustries, setSecondaryIndustries] = useState<Industry[]>([]);
   const [config, setConfig] = useState<Configuration>(DEFAULT_CONFIG);
   const [assessments, setAssessments] = useState<Record<string, AssessmentData>>({});
   const [isFinalized, setIsFinalized] = useState(false);
-  const [showLockConfirm, setShowLockConfirm] = useState(false);
-  const [surveyStatus, setSurveyStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+
+  // Smart Pre-population of Name as [Company Name] Financial Materiality Assessment
+  useEffect(() => {
+    if (view === 'WIZARD' && !assessmentName && !currentAssessmentId) {
+      setAssessmentName('[Company Name] Financial Materiality Assessment');
+    }
+  }, [view, currentAssessmentId]);
 
   const activeTopics = useMemo(() => {
     if (!primaryIndustry) return [];
@@ -57,36 +61,23 @@ const App: React.FC = () => {
     }
   };
 
-  const generateId = () => {
-    try {
-      return crypto.randomUUID();
-    } catch {
-      return Math.random().toString(36).substring(2, 15);
-    }
-  };
+  const generateId = () => crypto.randomUUID();
 
   const handleUpdateAssessment = (topicId: string, updates: Partial<AssessmentData>) => {
     setAssessments(prev => {
        const existing = prev[topicId] || { 
-         topicId, 
-         isMaterial: null, 
-         valueChain: [], 
+         topicId, isMaterial: null, valueChain: [], 
          scores: { magnitude: ScoreLevel.LOW, likelihood: ScoreLevel.LOW, horizon: ScoreLevel.LOW }, 
-         ifrsBridge: {},
-         lastUpdated: 0
+         ifrsBridge: {}, lastUpdated: 0
        };
-       return {
-         ...prev,
-         [topicId]: { ...existing, ...updates, lastUpdated: Date.now() }
-       };
+       return { ...prev, [topicId]: { ...existing, ...updates, lastUpdated: Date.now() } };
     });
   };
 
   const handleCreateNew = () => {
     setCurrentAssessmentId(null);
     setAssessmentName('');
-    setTimelineStart('');
-    setTimelineEnd('');
+    setReportingYear('2025');
     setPrimaryIndustry(null);
     setSecondaryIndustries([]);
     setConfig(DEFAULT_CONFIG);
@@ -99,8 +90,7 @@ const App: React.FC = () => {
   const handleOpenAssessment = (saved: SavedAssessment) => {
     setCurrentAssessmentId(saved.id);
     setAssessmentName(saved.assessmentName);
-    setTimelineStart(saved.timeline.start);
-    setTimelineEnd(saved.timeline.end);
+    setReportingYear(saved.reportingYear);
     setPrimaryIndustry(saved.data.primaryIndustry);
     setSecondaryIndustries(saved.data.secondaryIndustries);
     setConfig(saved.data.config);
@@ -110,104 +100,45 @@ const App: React.FC = () => {
     setView('WIZARD');
   };
 
-  const handleRequestReassessment = (id: string, reason: string) => {
-    setSavedAssessments(prev => prev.map(a => {
-      if (a.id === id) {
-        return {
-          ...a,
-          status: AssessmentStatus.RE_ASSESSMENT_REQUIRED,
-          reAssessmentReason: reason,
-          lastModified: Date.now(),
-          version: a.version + 1
-        };
-      }
-      return a;
-    }));
-  };
-
-  const handleSaveAssessment = (year: string) => {
-    const timestamp = Date.now();
+  const handleSaveAndExit = () => {
     const isNew = !currentAssessmentId;
     const idToUse = isNew ? generateId() : currentAssessmentId!;
-    
-    const assessmentToSave: SavedAssessment = {
+    const toSave: SavedAssessment = {
       id: idToUse,
       assessmentName: assessmentName || 'Untitled Assessment',
-      timeline: { start: timelineStart, end: timelineEnd },
-      reportingYear: year,
-      version: isNew ? 1 : (savedAssessments.find(a => a.id === idToUse)?.version || 1), 
-      status: isFinalized ? AssessmentStatus.FINALIZED : AssessmentStatus.DRAFT,
-      lastModified: timestamp,
-      data: {
-        primaryIndustry,
-        secondaryIndustries,
-        config,
-        assessments
-      }
+      reportingYear,
+      version: isNew ? 1 : (savedAssessments.find(a => a.id === idToUse)?.version || 1),
+      status: AssessmentStatus.DRAFT,
+      lastModified: Date.now(),
+      data: { primaryIndustry, secondaryIndustries, config, assessments }
     };
-
-    setSavedAssessments(prev => {
-      if (isNew) return [assessmentToSave, ...prev];
-      return prev.map(a => a.id === idToUse ? assessmentToSave : a);
-    });
-
-    setCurrentAssessmentId(idToUse);
-    if (!isFinalized) setView('LIST');
+    setSavedAssessments(prev => isNew ? [toSave, ...prev] : prev.map(a => a.id === idToUse ? toSave : a));
+    setView('LIST');
   };
 
-  const handleFinalize = (year: string) => {
+  const handleFinalize = () => {
     setIsFinalized(true);
-    const timestamp = Date.now();
     const idToUse = currentAssessmentId || generateId();
-    
-    const finalizedRecord: SavedAssessment = {
+    const finalized: SavedAssessment = {
       id: idToUse,
-      assessmentName: assessmentName || 'Untitled Assessment',
-      timeline: { start: timelineStart, end: timelineEnd },
-      reportingYear: year,
+      assessmentName,
+      reportingYear,
       version: currentAssessmentId ? (savedAssessments.find(a => a.id === currentAssessmentId)?.version || 1) : 1,
       status: AssessmentStatus.FINALIZED,
-      lastModified: timestamp,
-      data: {
-        primaryIndustry,
-        secondaryIndustries,
-        config,
-        assessments
-      }
+      lastModified: Date.now(),
+      data: { primaryIndustry, secondaryIndustries, config, assessments }
     };
-
     setSavedAssessments(prev => {
       const exists = prev.some(a => a.id === idToUse);
-      if (exists) return prev.map(a => a.id === idToUse ? finalizedRecord : a);
-      return [finalizedRecord, ...prev];
+      return exists ? prev.map(a => a.id === idToUse ? finalized : a) : [finalized, ...prev];
     });
-
     setCurrentAssessmentId(idToUse);
-  };
-
-  const handleInitiateSurvey = () => {
-    setSurveyStatus('sending');
-    setTimeout(() => {
-      setSurveyStatus('sent');
-      setTimeout(() => setSurveyStatus('idle'), 3000);
-    }, 1500);
-  };
-  
-  const handleListInitiateSurvey = (id: string) => {
-     alert(`Stakeholder Survey process initiated for assessment ID: ${id}`);
-  };
-
-  const canProceed = () => {
-    if (step === 1) {
-       return assessmentName.length > 0 && timelineStart.length > 0 && timelineEnd.length > 0 && !!primaryIndustry;
-    }
-    return true;
   };
 
   const steps = [
-    { id: 1, title: 'Settings', icon: Settings },
+    { id: 1, title: 'Scope', icon: Settings },
     { id: 2, title: 'Assessment', icon: ClipboardList },
-    { id: 3, title: 'Report', icon: BarChart3 },
+    { id: 3, title: 'Summary', icon: BarChart3 },
   ];
 
   if (view === 'LIST') {
@@ -215,18 +146,15 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-slate-50 flex flex-col">
         <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">M</div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight">Materiality<span className="text-indigo-600">Architect</span></h1>
-            </div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Materiality<span className="text-indigo-600">Architect</span></h1>
           </div>
         </header>
         <AssessmentList 
           assessments={savedAssessments}
           onCreateNew={handleCreateNew}
           onOpenAssessment={handleOpenAssessment}
-          onRequestReassessment={handleRequestReassessment}
-          onInitiateSurvey={handleListInitiateSurvey}
+          onRequestReassessment={(id, reason) => setSavedAssessments(prev => prev.map(a => a.id === id ? {...a, status: AssessmentStatus.RE_ASSESSMENT_REQUIRED, reAssessmentReason: reason, version: a.version+1} : a))}
+          onInitiateSurvey={() => {}}
         />
       </div>
     );
@@ -234,111 +162,50 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button onClick={() => setView('LIST')} className="p-1 hover:bg-slate-100 rounded-full mr-2">
-               <ArrowLeft className="w-5 h-5 text-slate-500" />
-            </button>
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">M</div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Materiality<span className="text-indigo-600">Architect</span></h1>
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 h-16 flex items-center">
+        <div className="max-w-5xl mx-auto px-4 w-full flex items-center justify-between">
+          <div className="flex items-center gap-4">
+             <button onClick={() => setView('LIST')} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500"><ArrowLeft size={20}/></button>
+             <span className="font-bold text-slate-900">{assessmentName}</span>
+          </div>
+          <div className="flex gap-4">
+             {steps.map(s => (
+               <div key={s.id} className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${step === s.id ? 'text-indigo-600' : 'text-slate-300'}`}>
+                 <s.icon size={14}/> {s.title}
+               </div>
+             ))}
           </div>
         </div>
       </header>
 
-      <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-3xl mx-auto py-4">
-          <div className="flex items-center justify-between relative">
-             <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-100 -z-10" />
-             {steps.map((s) => {
-               const Icon = s.icon;
-               const isActive = s.id === step;
-               const isCompleted = s.id < step;
-               return (
-                 <div key={s.id} className="flex flex-col items-center gap-2 bg-white px-2">
-                   <button
-                     onClick={() => (s.id < step && !isFinalized ? setStep(s.id) : null)}
-                     disabled={s.id > step || isFinalized}
-                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
-                       ${isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-110' : 
-                         isCompleted ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}
-                       `}
-                   >
-                     <Icon className="w-5 h-5" />
-                   </button>
-                   <span className={`text-xs font-medium ${isActive ? 'text-indigo-700' : 'text-slate-500'}`}>{s.title}</span>
-                 </div>
-               );
-             })}
-          </div>
-        </div>
-      </div>
-
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
         {step === 1 && (
-          <div className="space-y-12">
-            <section>
-              <div className="flex items-center justify-between mb-6">
-                 <div>
-                    <h2 className="text-2xl font-bold text-slate-900">Entity & Industry Scope</h2>
-                    <p className="text-slate-500 mt-1">Define the reporting boundaries for your assessment.</p>
-                 </div>
-              </div>
-              <GeneralSettings 
-                name={assessmentName} setName={setAssessmentName}
-                startDate={timelineStart} setStartDate={setTimelineStart}
-                endDate={timelineEnd} setEndDate={setTimelineEnd}
-              />
-              <div className="h-6"></div>
-              <IndustrySelector 
-                primaryIndustry={primaryIndustry}
-                secondaryIndustries={secondaryIndustries}
-                onSelectPrimary={setPrimaryIndustry}
-                onToggleSecondary={handleToggleSecondary}
-              />
-            </section>
-            <section>
-               <ConfigurationBuilder config={config} setConfig={setConfig} />
-            </section>
+          <div className="space-y-8">
+            <GeneralSettings name={assessmentName} setName={setAssessmentName} year={reportingYear} setYear={setReportingYear} />
+            <IndustrySelector primaryIndustry={primaryIndustry} secondaryIndustries={secondaryIndustries} onSelectPrimary={setPrimaryIndustry} onToggleSecondary={handleToggleSecondary} />
+            <ConfigurationBuilder config={config} setConfig={setConfig} />
           </div>
         )}
-        {step === 2 && (
-          <AssessmentEngine 
-            topics={activeTopics} assessments={assessments}
-            config={config} onUpdateAssessment={handleUpdateAssessment}
-          />
-        )}
-        {step === 3 && (
-          <Dashboard 
-             assessments={assessments} topics={activeTopics}
-             isReadOnly={isFinalized} onSave={handleSaveAssessment}
-             initialYear={timelineEnd ? timelineEnd.split('-')[0] : undefined}
-          />
-        )}
+        {step === 2 && <AssessmentEngine topics={activeTopics} assessments={assessments} config={config} onUpdateAssessment={handleUpdateAssessment} />}
+        {step === 3 && <Dashboard assessments={assessments} topics={activeTopics} isReadOnly={isFinalized} onSave={() => setView('LIST')} initialYear={reportingYear} />}
       </main>
 
       <div className="bg-white border-t border-slate-200 p-4 sticky bottom-0 z-50">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <button onClick={() => setView('LIST')} className="px-4 py-2 text-slate-500 hover:text-slate-700 font-medium flex items-center gap-1">
-             <ArrowLeft className="w-4 h-4" /> Cancel & Exit
+          <button onClick={handleSaveAndExit} className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-bold flex items-center gap-2 hover:bg-slate-200 transition-all">
+             <Save size={18}/> Save & Exit
           </button>
           <div className="flex items-center gap-4">
-             {step > 1 && (
-               <button onClick={() => setStep(prev => Math.max(1, prev - 1))} disabled={isFinalized} className="px-6 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-50 font-medium">
-                 Back
-               </button>
-             )}
+             {step > 1 && <button onClick={() => setStep(prev => prev - 1)} disabled={isFinalized} className="px-6 py-2.5 font-bold text-slate-500">Back</button>}
              {step < 3 ? (
-               <button onClick={() => setStep(prev => prev + 1)} disabled={!canProceed()} className="px-6 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 font-medium flex items-center gap-2">
-                 Next Step <ChevronRight className="w-4 h-4" />
+               <button onClick={() => setStep(prev => prev + 1)} disabled={!primaryIndustry} className="px-8 py-2.5 bg-slate-900 text-white rounded-lg font-bold flex items-center gap-2 hover:bg-slate-800 shadow-lg">
+                 Next Step <ChevronRight size={18}/>
                </button>
              ) : isFinalized ? (
-                <button onClick={handleInitiateSurvey} disabled={surveyStatus !== 'idle'} className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-sm transition-all flex items-center gap-2">
-                  <Users className="w-4 h-4" /> Initiate Stakeholder Survey
-                </button>
+               <button onClick={() => setView('LIST')} className="px-8 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700">Close Roadmap</button>
              ) : (
-               <button onClick={() => handleFinalize(timelineEnd ? timelineEnd.split('-')[0] : '2025')} className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium shadow-sm flex items-center gap-2">
-                 <Lock className="w-4 h-4" /> Finalize & Lock
+               <button onClick={handleFinalize} className="px-8 py-2.5 bg-emerald-600 text-white rounded-lg font-bold flex items-center gap-2 hover:bg-emerald-700 shadow-lg">
+                 <Lock size={18}/> Finalize & Lock
                </button>
              )}
           </div>

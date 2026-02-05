@@ -1,6 +1,6 @@
+
 import { Configuration, MagnitudeType, Industry, SasbTopic } from './types';
 
-// Mock SASB Industries (Subset for demo)
 export const MOCK_INDUSTRIES: Industry[] = [
   { code: 'TC-SI', name: 'Software & IT Services', sector: 'Technology & Communications' },
   { code: 'TC-HW', name: 'Hardware', sector: 'Technology & Communications' },
@@ -12,9 +12,7 @@ export const MOCK_INDUSTRIES: Industry[] = [
   { code: 'FN-CB', name: 'Commercial Banks', sector: 'Financials' },
 ];
 
-// Mock Topics linked to Industries
 export const MOCK_TOPICS: SasbTopic[] = [
-  // Software
   { 
     id: 'TC-SI-001', 
     industryCode: 'TC-SI', 
@@ -36,12 +34,11 @@ export const MOCK_TOPICS: SasbTopic[] = [
     description: 'Identifying and addressing security threats.',
     associatedMetrics: ['TC-SI-230a.1', 'TC-SI-230a.2']
   },
-  // Apparel
   { 
     id: 'CG-AA-001', 
     industryCode: 'CG-AA', 
     name: 'Management of Chemicals in Products', 
-    description: 'use of restricted substances in manufacturing.',
+    description: 'Use of restricted substances in manufacturing.',
     associatedMetrics: ['CG-AA-250a.1', 'CG-AA-250a.2']
   },
   { 
@@ -51,7 +48,6 @@ export const MOCK_TOPICS: SasbTopic[] = [
     description: 'Human rights and fair labor practices.',
     associatedMetrics: ['CG-AA-430a.1', 'CG-AA-430a.2']
   },
-  // Oil & Gas
   { 
     id: 'EM-EP-001', 
     industryCode: 'EM-EP', 
@@ -65,20 +61,17 @@ export const DEFAULT_CONFIG: Configuration = {
   magnitude: {
     type: MagnitudeType.RELATIVE,
     denominator: 'EBITDA',
-    ranges: {
-      low: { label: 'Low', min: 0, max: 1 },
-      medium: { label: 'Medium', min: 1, max: 5 },
-      high: { label: 'High', min: 5, max: null },
-    }
+    lowThreshold: 1,
+    mediumThreshold: 5,
+    maxCap: 15,
   },
   likelihood: {
-    lowMax: 20,
-    mediumMax: 60,
-    highMin: 60,
+    lowThreshold: 20,
+    mediumThreshold: 60,
   },
   horizons: {
-    shortTermYears: 1,
-    mediumTermYears: 5,
-    longTermYears: 10,
+    shortTerm: 1,
+    mediumTerm: 5,
+    longTermMax: 15,
   }
 };

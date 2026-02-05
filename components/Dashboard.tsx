@@ -11,7 +11,7 @@ import {
   Cell
 } from 'recharts';
 import { AssessmentData, SasbTopic, ScoreLevel } from '../types';
-import { Download, CheckCircle, AlertCircle, Save, Calendar, Lock } from 'lucide-react';
+import { Download, CheckCircle, AlertCircle, Save, Calendar, Lock, ListChecks } from 'lucide-react';
 
 interface Props {
   assessments: Record<string, AssessmentData>;
@@ -56,7 +56,7 @@ export const Dashboard: React.FC<Props> = ({
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8 pb-12">
       
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 relative overflow-hidden">
         {isReadOnly && (
@@ -148,7 +148,7 @@ export const Dashboard: React.FC<Props> = ({
         </div>
       </div>
       
-      {/* Simple Heatmap Grid Visualization */}
+      {/* Heatmap Grid Visualization */}
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-800 mb-6">Materiality Matrix Distribution</h3>
         <div className="grid grid-cols-4 gap-1 w-full max-w-2xl mx-auto">
@@ -175,6 +175,63 @@ export const Dashboard: React.FC<Props> = ({
           <div className="bg-slate-100 h-24 rounded flex items-center justify-center font-bold text-slate-600">{getMatrixCount(ScoreLevel.LOW, ScoreLevel.LOW)}</div>
           <div className="bg-green-100 h-24 rounded flex items-center justify-center font-bold text-green-800">{getMatrixCount(ScoreLevel.MEDIUM, ScoreLevel.LOW)}</div>
           <div className="bg-amber-100 h-24 rounded flex items-center justify-center font-bold text-amber-800">{getMatrixCount(ScoreLevel.HIGH, ScoreLevel.LOW)}</div>
+        </div>
+      </div>
+
+      {/* Disclosure Metrics Roadmap */}
+      <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm border-t-4 border-t-indigo-600">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+            <ListChecks className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-slate-900">Disclosure Roadmap: SICS® Metric Index</h3>
+            <p className="text-sm text-slate-500">Required reporting metrics mapped from material topics for FY{reportingYear}.</p>
+          </div>
+        </div>
+
+        {materialTopics.length === 0 ? (
+          <div className="p-8 text-center bg-slate-50 rounded-lg border border-dashed border-slate-300">
+            <p className="text-slate-500 text-sm">Identify material topics to see your disclosure roadmap.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {materialTopics.map(topic => (
+              <div key={topic.id} className="group overflow-hidden rounded-xl border border-slate-100 bg-white hover:border-indigo-200 transition-all duration-200 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center">
+                  {/* Topic Label */}
+                  <div className="p-4 bg-slate-50 border-r border-slate-100 md:w-1/3">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{topic.id}</div>
+                    <div className="text-sm font-bold text-slate-800 leading-tight">{topic.name}</div>
+                  </div>
+                  
+                  {/* Metrics List */}
+                  <div className="p-4 md:flex-1 flex flex-wrap gap-2">
+                    {topic.associatedMetrics.map(metric => (
+                      <div key={metric} className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50/50 border border-indigo-100 rounded-lg text-xs font-medium text-indigo-700">
+                        <span className="font-mono font-bold">{metric}</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                        <span className="text-[9px] uppercase tracking-tighter opacity-70">Ready for Disclosure</span>
+                      </div>
+                    ))}
+                    {topic.associatedMetrics.length === 0 && (
+                      <span className="text-xs text-slate-400 italic">No specific SASB metrics defined for this topic.</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <CheckCircle className="w-4 h-4 text-emerald-500" />
+            <span>Metrics updated based on latest SICS® Industry Standards.</span>
+          </div>
+          <div className="text-xs font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-full">
+            Total Metrics: {materialTopics.reduce((acc, t) => acc + t.associatedMetrics.length, 0)}
+          </div>
         </div>
       </div>
 

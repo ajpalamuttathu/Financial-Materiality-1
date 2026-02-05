@@ -1,6 +1,7 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Configuration, MagnitudeType } from '../types';
-import { Sliders, Clock, AlertTriangle, ChevronDown } from 'lucide-react';
+import { Sliders, Clock, AlertTriangle, HelpCircle, ChevronDown, Info } from 'lucide-react';
 
 interface Props {
   config: Configuration;
@@ -8,229 +9,205 @@ interface Props {
 }
 
 export const ConfigurationBuilder: React.FC<Props> = ({ config, setConfig }) => {
-  
-  const PREDEFINED_DENOMINATORS = [
-    'Annual Revenue',
-    'EBITDA',
-    'Total Assets',
-    'Net Income',
-    'Operating Expenses'
-  ];
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
-  const handleMagnitudeChange = (field: string, value: any) => {
-    setConfig(prev => ({
-      ...prev,
-      magnitude: { ...prev.magnitude, [field]: value }
-    }));
+  const TOOLTIPS = {
+    magnitude: {
+      header: "Why define Financial Impact?",
+      body: "Under IFRS S1, information is considered 'material' if omitting or misstating it could reasonably influence the decisions of primary users. Defining clear quantitative thresholds establishes an objective 'ruler' to separate operational noise from significant risks affecting cash flows or cost of capital."
+    },
+    probability: {
+      header: "Why define Probability?",
+      body: "IFRS S1 requires disclosure of risks that could 'reasonably be expected' to affect prospects. Setting probability thresholds helps filter 'remote' risks from those that are 'reasonably possible' or 'probable', ensuring reporting focuses on scenarios impacting enterprise value."
+    },
+    horizon: {
+      header: "Why define Time Horizons?",
+      body: "IFRS S1 (Para 77) requires defining short, medium, and long-term horizons linked to strategic planning cycles. These must be consistent with horizons used in your general purpose financial statements."
+    }
   };
 
-  const handleRangeChange = (level: 'low' | 'medium' | 'high', field: 'min' | 'max', value: number) => {
-    setConfig(prev => ({
-      ...prev,
-      magnitude: {
-        ...prev.magnitude,
-        ranges: {
-          ...prev.magnitude.ranges,
-          [level]: { ...prev.magnitude.ranges[level], [field]: value }
-        }
-      }
-    }));
+  const handleMagChange = (field: keyof Configuration['magnitude'], value: any) => {
+    setConfig(prev => ({ ...prev, magnitude: { ...prev.magnitude, [field]: value } }));
   };
 
-  const currentDenominator = config.magnitude.denominator || '';
-  const isCustomBasis = !PREDEFINED_DENOMINATORS.includes(currentDenominator);
+  const magUnit = config.magnitude.type === MagnitudeType.RELATIVE ? '%' : 'M';
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Tooltip Modal/Overlay */}
+      {activeTooltip && (
+        <div className="fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setActiveTooltip(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 text-indigo-600 mb-4">
+              <Info className="w-6 h-6" />
+              <h4 className="text-xl font-bold text-slate-900">{TOOLTIPS[activeTooltip as keyof typeof TOOLTIPS].header}</h4>
+            </div>
+            <p className="text-slate-600 leading-relaxed text-sm whitespace-pre-wrap">
+              {TOOLTIPS[activeTooltip as keyof typeof TOOLTIPS].body}
+            </p>
+            <button onClick={() => setActiveTooltip(null)} className="mt-8 w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all">
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Magnitude Section */}
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-blue-100 rounded-lg text-blue-700">
-            <Sliders className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">Financial Impact Magnitude</h3>
-            <p className="text-sm text-slate-500">Define the ruler for "Materiality" against your financial statements.</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Methodology</label>
-            <div className="flex rounded-md shadow-sm">
-              <button
-                onClick={() => handleMagnitudeChange('type', MagnitudeType.RELATIVE)}
-                className={`flex-1 px-4 py-2 text-sm font-medium rounded-l-md border ${config.magnitude.type === MagnitudeType.RELATIVE ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
-              >
-                Relative (%)
-              </button>
-              <button
-                onClick={() => handleMagnitudeChange('type', MagnitudeType.ABSOLUTE)}
-                className={`flex-1 px-4 py-2 text-sm font-medium rounded-r-md border-t border-b border-r ${config.magnitude.type === MagnitudeType.ABSOLUTE ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}
-              >
-                Absolute ($)
-              </button>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg text-blue-700">
+              <Sliders className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                Financial Impact Magnitude
+                <button onClick={() => setActiveTooltip('magnitude')} className="text-slate-400 hover:text-indigo-600 transition-colors">
+                  <HelpCircle className="w-4 h-4" />
+                </button>
+              </h3>
             </div>
           </div>
-
-          {config.magnitude.type === MagnitudeType.RELATIVE && (
-             <div className="col-span-2">
-               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Denominator Basis</label>
-               <div className="flex flex-col gap-3">
-                 <div className="relative">
-                   <select
-                      value={isCustomBasis ? 'Custom' : currentDenominator}
-                      onChange={(e) => {
-                        if (e.target.value === 'Custom') {
-                           handleMagnitudeChange('denominator', ''); 
-                        } else {
-                           handleMagnitudeChange('denominator', e.target.value);
-                        }
-                      }}
-                      className="w-full appearance-none border border-slate-300 rounded-md pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-slate-700"
-                   >
-                      <option value="" disabled>Select Basis...</option>
-                      {PREDEFINED_DENOMINATORS.map(opt => (
-                         <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                      <option value="Custom">Custom Basis...</option>
-                   </select>
-                   <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
-                 </div>
-                 
-                 {isCustomBasis && (
-                   <input 
-                      type="text" 
-                      value={currentDenominator}
-                      onChange={(e) => handleMagnitudeChange('denominator', e.target.value)}
-                      className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none animate-in fade-in slide-in-from-top-1"
-                      placeholder="Enter custom denominator (e.g. Adjusted EBITDA)..."
-                      autoFocus
-                   />
-                 )}
-               </div>
-             </div>
-          )}
+          <div className="flex rounded-lg border border-slate-200 p-1 bg-slate-50">
+            <button 
+              onClick={() => handleMagChange('type', MagnitudeType.RELATIVE)}
+              className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${config.magnitude.type === MagnitudeType.RELATIVE ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+            >
+              %
+            </button>
+            <button 
+              onClick={() => handleMagChange('type', MagnitudeType.ABSOLUTE)}
+              className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${config.magnitude.type === MagnitudeType.ABSOLUTE ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+            >
+              $
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 border-t pt-6 border-slate-100">
-           <div className="space-y-2">
-              <div className="text-sm font-medium text-slate-700">Low Impact</div>
-              <div className="flex items-center gap-2">
-                 <span className="text-xs text-slate-400">&lt;</span>
-                 <input 
-                    type="number" 
-                    value={config.magnitude.ranges.low.max || 0}
-                    onChange={(e) => handleRangeChange('low', 'max', parseFloat(e.target.value))}
-                    className="w-20 border border-slate-300 rounded px-2 py-1 text-sm text-center"
-                 />
-                 <span className="text-xs text-slate-500">{config.magnitude.type === MagnitudeType.RELATIVE ? '%' : 'M'}</span>
+        <div className="space-y-8">
+          <div>
+            <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">
+              <span>Low Range: 0-{config.magnitude.lowThreshold}{magUnit}</span>
+              <span>Medium: {config.magnitude.lowThreshold}-{config.magnitude.mediumThreshold}{magUnit}</span>
+              <span>High Cap: {config.magnitude.maxCap}{magUnit}</span>
+            </div>
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium text-slate-600 w-32">Low Limit</label>
+                <input 
+                  type="range" min="1" max="10" step="0.5" 
+                  value={config.magnitude.lowThreshold}
+                  onChange={e => handleMagChange('lowThreshold', parseFloat(e.target.value))}
+                  className="flex-1 accent-blue-600"
+                />
+                <span className="text-sm font-bold text-slate-900 w-12 text-right">{config.magnitude.lowThreshold}{magUnit}</span>
               </div>
-           </div>
-           <div className="space-y-2">
-              <div className="text-sm font-medium text-slate-700">Medium Impact</div>
-              <div className="flex items-center gap-2">
-                 <span className="text-xs text-slate-500">Between Low &</span>
-                 <input 
-                    type="number" 
-                    value={config.magnitude.ranges.medium.max || 0}
-                    onChange={(e) => handleRangeChange('medium', 'max', parseFloat(e.target.value))}
-                    className="w-20 border border-slate-300 rounded px-2 py-1 text-sm text-center"
-                 />
-                 <span className="text-xs text-slate-500">{config.magnitude.type === MagnitudeType.RELATIVE ? '%' : 'M'}</span>
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium text-slate-600 w-32">Medium Limit</label>
+                <input 
+                  type="range" min={config.magnitude.lowThreshold + 1} max="30" step="1" 
+                  value={config.magnitude.mediumThreshold}
+                  onChange={e => handleMagChange('mediumThreshold', parseFloat(e.target.value))}
+                  className="flex-1 accent-blue-600"
+                />
+                <span className="text-sm font-bold text-slate-900 w-12 text-right">{config.magnitude.mediumThreshold}{magUnit}</span>
               </div>
-           </div>
-           <div className="space-y-2">
-              <div className="text-sm font-medium text-slate-700">High Impact</div>
-              <div className="flex items-center gap-2">
-                 <span className="text-xs text-slate-400">&gt;</span>
-                 <span className="text-sm font-semibold text-slate-900">{config.magnitude.ranges.medium.max}</span>
-                 <span className="text-xs text-slate-500">{config.magnitude.type === MagnitudeType.RELATIVE ? '%' : 'M'}</span>
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium text-slate-600 w-32">Max Risk Ceiling</label>
+                <input 
+                  type="range" min={config.magnitude.mediumThreshold + 5} max="100" step="5" 
+                  value={config.magnitude.maxCap}
+                  onChange={e => handleMagChange('maxCap', parseFloat(e.target.value))}
+                  className="flex-1 accent-slate-900"
+                />
+                <span className="text-sm font-bold text-slate-900 w-12 text-right">{config.magnitude.maxCap}{magUnit}</span>
               </div>
-           </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Likelihood Section */}
+        {/* Probability Section */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-           <div className="flex items-center gap-3 mb-4">
+           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-amber-100 rounded-lg text-amber-700">
               <AlertTriangle className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">Probability</h3>
-              <p className="text-sm text-slate-500">Define likelihood thresholds.</p>
-            </div>
+            <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              Probability Thresholds
+              <button onClick={() => setActiveTooltip('probability')} className="text-slate-400 hover:text-indigo-600 transition-colors">
+                <HelpCircle className="w-4 h-4" />
+              </button>
+            </h3>
           </div>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center text-sm border-b border-slate-100 pb-2">
-              <span className="text-slate-600">Low Probability Max</span>
-              <div className="flex items-center gap-1">
-                <input 
-                  type="number" 
-                  value={config.likelihood.lowMax}
-                  onChange={(e) => setConfig(prev => ({...prev, likelihood: {...prev.likelihood, lowMax: parseFloat(e.target.value)}}))}
-                  className="w-16 border border-slate-300 rounded px-2 py-1 text-right"
-                />
-                <span>%</span>
-              </div>
-            </div>
-            <div className="flex justify-between items-center text-sm border-b border-slate-100 pb-2">
-              <span className="text-slate-600">Medium Probability Max</span>
-              <div className="flex items-center gap-1">
-                <input 
-                  type="number" 
-                  value={config.likelihood.mediumMax}
-                  onChange={(e) => setConfig(prev => ({...prev, likelihood: {...prev.likelihood, mediumMax: parseFloat(e.target.value)}}))}
-                  className="w-16 border border-slate-300 rounded px-2 py-1 text-right"
-                />
-                <span>%</span>
-              </div>
-            </div>
-            <div className="flex justify-between items-center text-sm pt-1">
-              <span className="font-semibold text-slate-700">High Probability</span>
-              <span className="font-semibold text-slate-900">&gt; {config.likelihood.mediumMax}%</span>
-            </div>
+          <div className="space-y-6">
+             <div className="flex items-center gap-4">
+               <label className="text-sm font-medium text-slate-600 w-24">Low Prob</label>
+               <input 
+                  type="range" min="5" max="40" step="5"
+                  value={config.likelihood.lowThreshold}
+                  onChange={e => setConfig(prev => ({...prev, likelihood: {...prev.likelihood, lowThreshold: parseInt(e.target.value)}}))}
+                  className="flex-1 accent-amber-600"
+               />
+               <span className="text-sm font-bold text-slate-900 w-12 text-right">{config.likelihood.lowThreshold}%</span>
+             </div>
+             <div className="flex items-center gap-4">
+               <label className="text-sm font-medium text-slate-600 w-24">Medium Prob</label>
+               <input 
+                  type="range" min={config.likelihood.lowThreshold + 10} max="90" step="5"
+                  value={config.likelihood.mediumThreshold}
+                  onChange={e => setConfig(prev => ({...prev, likelihood: {...prev.likelihood, mediumThreshold: parseInt(e.target.value)}}))}
+                  className="flex-1 accent-amber-600"
+               />
+               <span className="text-sm font-bold text-slate-900 w-12 text-right">{config.likelihood.mediumThreshold}%</span>
+             </div>
           </div>
         </div>
 
         {/* Time Horizon Section */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-           <div className="flex items-center gap-3 mb-4">
+           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-emerald-100 rounded-lg text-emerald-700">
               <Clock className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">Time Horizons</h3>
-              <p className="text-sm text-slate-500">Align with business planning.</p>
-            </div>
+            <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              Time Horizons
+              <button onClick={() => setActiveTooltip('horizon')} className="text-slate-400 hover:text-indigo-600 transition-colors">
+                <HelpCircle className="w-4 h-4" />
+              </button>
+            </h3>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-6">
              <div className="flex items-center gap-4">
-               <label className="text-sm w-24 text-slate-600">Short Term</label>
+               <label className="text-sm font-medium text-slate-600 w-24">Short Term</label>
                <input 
                   type="range" min="1" max="3" step="1"
-                  value={config.horizons.shortTermYears}
-                  onChange={(e) => setConfig(prev => ({...prev, horizons: {...prev.horizons, shortTermYears: parseInt(e.target.value)}}))}
+                  value={config.horizons.shortTerm}
+                  onChange={e => setConfig(prev => ({...prev, horizons: {...prev.horizons, shortTerm: parseInt(e.target.value)}}))}
                   className="flex-1 accent-emerald-600"
                />
-               <span className="text-sm font-medium w-12 text-right">{config.horizons.shortTermYears} yr</span>
+               <span className="text-sm font-bold text-slate-900 w-12 text-right">{config.horizons.shortTerm}y</span>
              </div>
              <div className="flex items-center gap-4">
-               <label className="text-sm w-24 text-slate-600">Medium Term</label>
+               <label className="text-sm font-medium text-slate-600 w-24">Medium Term</label>
                <input 
-                  type="range" min="3" max="10" step="1"
-                  value={config.horizons.mediumTermYears}
-                  onChange={(e) => setConfig(prev => ({...prev, horizons: {...prev.horizons, mediumTermYears: parseInt(e.target.value)}}))}
+                  type="range" min={config.horizons.shortTerm + 1} max="10" step="1"
+                  value={config.horizons.mediumTerm}
+                  onChange={e => setConfig(prev => ({...prev, horizons: {...prev.horizons, mediumTerm: parseInt(e.target.value)}}))}
                   className="flex-1 accent-emerald-600"
                />
-               <span className="text-sm font-medium w-12 text-right">{config.horizons.mediumTermYears} yrs</span>
+               <span className="text-sm font-bold text-slate-900 w-12 text-right">{config.horizons.mediumTerm}y</span>
              </div>
              <div className="flex items-center gap-4">
-               <label className="text-sm w-24 text-slate-600">Long Term</label>
-               <div className="flex-1 text-xs text-slate-400">Everything beyond medium term</div>
-               <span className="text-sm font-medium w-12 text-right">&gt;{config.horizons.mediumTermYears}</span>
+               <label className="text-sm font-medium text-slate-600 w-24">Long Term</label>
+               <input 
+                  type="range" min={config.horizons.mediumTerm + 1} max="30" step="1"
+                  value={config.horizons.longTermMax}
+                  onChange={e => setConfig(prev => ({...prev, horizons: {...prev.horizons, longTermMax: parseInt(e.target.value)}}))}
+                  className="flex-1 accent-slate-900"
+               />
+               <span className="text-sm font-bold text-slate-900 w-12 text-right">{config.horizons.longTermMax}y</span>
              </div>
           </div>
         </div>

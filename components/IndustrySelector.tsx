@@ -41,11 +41,11 @@ export const IndustrySelector: React.FC<Props> = ({
               const selected = MOCK_INDUSTRIES.find(i => i.code === e.target.value);
               if (selected) onSelectPrimary(selected);
             }}
-            className="w-full appearance-none bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-4 pr-10 shadow-sm"
+            className="w-full appearance-none bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-4 pr-10 shadow-sm font-medium"
           >
-            <option value="" disabled>Select your primary industry...</option>
+            <option value="" disabled className="text-slate-400">Select your primary industry...</option>
             {MOCK_INDUSTRIES.map((ind) => (
-              <option key={ind.code} value={ind.code}>
+              <option key={ind.code} value={ind.code} className="text-slate-700">
                 {ind.name} ({ind.sector})
               </option>
             ))}
@@ -87,13 +87,13 @@ export const IndustrySelector: React.FC<Props> = ({
                 if (selected) onToggleSecondary(selected);
               }}
               disabled={!primaryIndustry}
-              className="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-slate-500 focus:border-slate-500 block p-3 pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-slate-500 focus:border-slate-500 block p-3 pr-10 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
-              <option value="" disabled>
+              <option value="" disabled className="text-slate-400">
                 {primaryIndustry ? "Add a secondary industry..." : "Select a primary industry first"}
               </option>
               {availableSecondary.map((ind) => (
-                <option key={ind.code} value={ind.code}>
+                <option key={ind.code} value={ind.code} className="text-slate-700">
                   {ind.name} ({ind.sector})
                 </option>
               ))}

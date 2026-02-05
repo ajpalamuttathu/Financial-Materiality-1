@@ -146,7 +146,8 @@ export const AssessmentList: React.FC<Props> = ({
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                     <div className="flex items-center gap-2">
                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                       {formatMonthYear(assessment.timeline.start)} - {formatMonthYear(assessment.timeline.end)}
+                       {/* Fix: Use reportingYear as timeline isn't defined in types */}
+                       FY{assessment.reportingYear}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
