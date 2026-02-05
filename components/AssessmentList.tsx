@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SavedAssessment, AssessmentStatus } from '../types';
 import { 
   Plus, 
@@ -22,13 +23,16 @@ interface Props {
   onInitiateSurvey: (id: string) => void;
 }
 
-export const AssessmentList: React.FC<Props> = ({ 
+/**
+ * AssessmentList component using standard function declaration to resolve JSX type issues.
+ */
+export function AssessmentList({ 
   assessments, 
   onCreateNew, 
   onOpenAssessment,
   onRequestReassessment,
   onInitiateSurvey
-}) => {
+}: Props) {
   const [reassessModalId, setReassessModalId] = useState<string | null>(null);
   const [reassessReason, setReassessReason] = useState('');
   
@@ -79,14 +83,6 @@ export const AssessmentList: React.FC<Props> = ({
           </span>
         );
     }
-  };
-
-  const formatMonthYear = (dateStr: string) => {
-    if (!dateStr) return 'N/A';
-    // dateStr is YYYY-MM
-    const [year, month] = dateStr.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   };
 
   return (
@@ -146,7 +142,6 @@ export const AssessmentList: React.FC<Props> = ({
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                     <div className="flex items-center gap-2">
                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                       {/* Fix: Use reportingYear as timeline isn't defined in types */}
                        FY{assessment.reportingYear}
                     </div>
                   </td>
@@ -285,4 +280,4 @@ export const AssessmentList: React.FC<Props> = ({
 
     </div>
   );
-};
+}

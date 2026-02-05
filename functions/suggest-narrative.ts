@@ -1,4 +1,5 @@
 
+// @google/genai guidelines followed: use new GoogleGenAI({ apiKey: process.env.API_KEY })
 import { GoogleGenAI } from "@google/genai";
 
 export const handler = async (event: any) => {
@@ -7,8 +8,8 @@ export const handler = async (event: any) => {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
+  // Ensure API key is present
+  if (!process.env.API_KEY) {
     return { 
       statusCode: 500, 
       body: JSON.stringify({ error: "Server configuration error: API Key missing." }) 
@@ -18,7 +19,8 @@ export const handler = async (event: any) => {
   try {
     const { topicName, industryName } = JSON.parse(event.body);
 
-    const ai = new GoogleGenAI({ apiKey });
+    // Initializing with the recommended pattern from guidelines
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = `
       You are a sustainability expert specializing in IFRS S1 and SASB standards.
       Write a concise, professional risk description for the following topic:
@@ -31,6 +33,7 @@ export const handler = async (event: any) => {
       Keep it under 3 sentences.
     `;
 
+    // Always use ai.models.generateContent directly with model name
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
@@ -39,6 +42,7 @@ export const handler = async (event: any) => {
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
+      // Accessing .text property directly as per guidelines
       body: JSON.stringify({ text: response.text?.trim() || "No suggestion generated." }),
     };
   } catch (error: any) {

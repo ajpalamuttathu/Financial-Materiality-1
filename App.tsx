@@ -1,5 +1,6 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Industry, Configuration, AssessmentData, SasbTopic, SavedAssessment, AssessmentStatus, ScoreLevel } from './types';
 import { DEFAULT_CONFIG, MOCK_TOPICS } from './constants';
 import { IndustrySelector } from './components/IndustrySelector';
@@ -27,7 +28,10 @@ const MOCK_SAVED_ASSESSMENTS: SavedAssessment[] = [
   }
 ];
 
-const App: React.FC = () => {
+/**
+ * App component using standard function declaration to resolve JSX type issues.
+ */
+export default function App() {
   const [view, setView] = useState<'LIST' | 'WIZARD'>('LIST');
   const [savedAssessments, setSavedAssessments] = useState<SavedAssessment[]>(MOCK_SAVED_ASSESSMENTS);
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
@@ -213,6 +217,4 @@ const App: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default App;
+}

@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { Configuration, MagnitudeType } from '../types';
 import { Sliders, Clock, AlertTriangle, HelpCircle, ChevronDown, Info } from 'lucide-react';
 
@@ -8,7 +9,10 @@ interface Props {
   setConfig: React.Dispatch<React.SetStateAction<Configuration>>;
 }
 
-export const ConfigurationBuilder: React.FC<Props> = ({ config, setConfig }) => {
+/**
+ * ConfigurationBuilder component using standard function declaration to resolve JSX type issues.
+ */
+export function ConfigurationBuilder({ config, setConfig }: Props) {
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
   const TOOLTIPS = {
@@ -214,4 +218,4 @@ export const ConfigurationBuilder: React.FC<Props> = ({ config, setConfig }) => 
       </div>
     </div>
   );
-};
+}

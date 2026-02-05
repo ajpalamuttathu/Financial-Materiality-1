@@ -1,5 +1,5 @@
 
-import React from 'react';
+import * as React from 'react';
 import { Layout, Calendar } from 'lucide-react';
 
 interface Props {
@@ -9,12 +9,15 @@ interface Props {
   setYear: (val: string) => void;
 }
 
-export const GeneralSettings: React.FC<Props> = ({
+/**
+ * GeneralSettings component using standard function declaration to resolve JSX type issues.
+ */
+export function GeneralSettings({
   name,
   setName,
   year,
   setYear
-}) => {
+}: Props) {
   const years = ["2024", "2025", "2026", "2027", "2028"];
 
   return (
@@ -62,4 +65,4 @@ export const GeneralSettings: React.FC<Props> = ({
       </div>
     </div>
   );
-};
+}

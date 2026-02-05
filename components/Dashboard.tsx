@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -21,13 +22,16 @@ interface Props {
   initialYear?: string;
 }
 
-export const Dashboard: React.FC<Props> = ({ 
+/**
+ * Dashboard component using standard function declaration to resolve JSX type issues.
+ */
+export function Dashboard({ 
   assessments, 
   topics, 
   isReadOnly = false, 
   onSave,
   initialYear = new Date().getFullYear().toString()
-}) => {
+}: Props) {
   const [reportingYear, setReportingYear] = useState<string>(initialYear);
   
   const materialTopics = topics.filter(t => assessments[t.id]?.isMaterial === true);
@@ -237,4 +241,4 @@ export const Dashboard: React.FC<Props> = ({
 
     </div>
   );
-};
+}

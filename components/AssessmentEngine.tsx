@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+
+import * as React from 'react';
+import { useState } from 'react';
 import { 
   SasbTopic, 
   AssessmentData, 
@@ -29,12 +31,15 @@ interface Props {
   onUpdateAssessment: (topicId: string, data: Partial<AssessmentData>) => void;
 }
 
-export const AssessmentEngine: React.FC<Props> = ({ 
+/**
+ * AssessmentEngine component using standard function declaration to resolve JSX type issues.
+ */
+export function AssessmentEngine({ 
   topics, 
   assessments, 
   config, 
   onUpdateAssessment 
-}) => {
+}: Props) {
   const [expandedTopicId, setExpandedTopicId] = useState<string | null>(topics[0]?.id || null);
   const [isGenerating, setIsGenerating] = useState<string | null>(null);
 
@@ -239,4 +244,4 @@ export const AssessmentEngine: React.FC<Props> = ({
       })}
     </div>
   );
-};
+}

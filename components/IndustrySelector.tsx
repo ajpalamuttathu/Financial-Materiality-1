@@ -1,4 +1,5 @@
-import React from 'react';
+
+import * as React from 'react';
 import { Industry } from '../types';
 import { MOCK_INDUSTRIES } from '../constants';
 import { Building2, Plus, X, ChevronsUpDown } from 'lucide-react';
@@ -10,12 +11,15 @@ interface Props {
   onToggleSecondary: (ind: Industry) => void;
 }
 
-export const IndustrySelector: React.FC<Props> = ({
+/**
+ * IndustrySelector component using standard function declaration to resolve JSX type issues.
+ */
+export function IndustrySelector({
   primaryIndustry,
   secondaryIndustries,
   onSelectPrimary,
   onToggleSecondary
-}) => {
+}: Props) {
   // Filter available options for secondary industries (exclude primary and already selected)
   const availableSecondary = MOCK_INDUSTRIES.filter(
     ind => ind.code !== primaryIndustry?.code && !secondaryIndustries.some(s => s.code === ind.code)
@@ -127,4 +131,4 @@ export const IndustrySelector: React.FC<Props> = ({
       </div>
     </div>
   );
-};
+}
