@@ -1,5 +1,5 @@
 
-// @google/genai guidelines followed: use new GoogleGenAI({ apiKey: process.env.API_KEY })
+// @google/genai guidelines followed: use new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
 import { GoogleGenAI } from "@google/genai";
 
 export const handler = async (event: any) => {
@@ -9,7 +9,7 @@ export const handler = async (event: any) => {
   }
 
   // Ensure API key is present
-  if (!process.env.API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     return { 
       statusCode: 500, 
       body: JSON.stringify({ error: "Server configuration error: API Key missing." }) 
@@ -20,7 +20,7 @@ export const handler = async (event: any) => {
     const { topicName, industryName } = JSON.parse(event.body);
 
     // Initializing with the recommended pattern from guidelines
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const prompt = `
       You are a sustainability expert specializing in IFRS S1 and SASB standards.
       Write a concise, professional risk description for the following topic:
@@ -35,7 +35,7 @@ export const handler = async (event: any) => {
 
     // Always use ai.models.generateContent directly with model name
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash',
       contents: prompt,
     });
 
